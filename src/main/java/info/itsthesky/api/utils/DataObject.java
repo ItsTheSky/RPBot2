@@ -1,12 +1,17 @@
 package info.itsthesky.api.utils;
 
+import info.itsthesky.core.utils.ArrayDataList;
 import info.itsthesky.core.utils.MapDataObject;
 import net.dv8tion.jda.internal.utils.Checks;
-import org.dom4j.Branch;
-import org.dom4j.Element;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.json.JSONObject;
 
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
@@ -17,6 +22,10 @@ public interface DataObject {
 
 	static DataObject empty() {
 		return new MapDataObject();
+	}
+
+	static DataList createList(List<?> elements) {
+		return new ArrayDataList((List<Object>) elements);
 	}
 
 	/**
@@ -41,6 +50,54 @@ public interface DataObject {
 	@Nullable <T> T get(@NotNull String key);
 
 	@Nullable <T> T getOpt(@Nullable String key);
+
+	// ########### SAMPLE GETTERS ########### //
+
+	default boolean getBoolean(@NotNull String key) {
+		return getOrDefault(key, false);
+	}
+
+	default byte getByte(@NotNull String key) {
+		return getOrDefault(key, (byte) 0);
+	}
+
+	default short getShort(@NotNull String key) {
+		return getOrDefault(key, (short) 0);
+	}
+
+	default int getInt(@NotNull String key) {
+		return getOrDefault(key, 0);
+	}
+
+	default long getLong(@NotNull String key) {
+		return getOrDefault(key, 0L);
+	}
+
+	default float getFloat(@NotNull String key) {
+		return getOrDefault(key, 0F);
+	}
+
+	default double getDouble(@NotNull String key) {
+		return getOrDefault(key, 0D);
+	}
+
+	default char getChar(@NotNull String key) {
+		return getOrDefault(key, '\0');
+	}
+
+	default String getString(@NotNull String key) {
+		return getOrDefault(key, "");
+	}
+
+	default DataObject getObject(@NotNull String key) {
+		return getOrDefault(key, empty());
+	}
+
+	default DataList getList(@NotNull String key) {
+		return getOrDefault(key, createList(List.of()));
+	}
+
+	// ########### SAMPLE GETTERS END ########### //
 
 	/**
 	 * Gets the value of a specific key, or a default value if the key doesn't exist.
@@ -77,12 +134,8 @@ public interface DataObject {
 	 */
 	DataObject remove(@NotNull String key);
 
-	/**
-	 * Gets an XML representation of this object.
-	 * @return The XML representation of this object.
-	 */
-	default void saveToXML(@NotNull Branch document) {
-		Checks.notNull(document, "document");
+	default JSONObject saveToJSON() {
+		final JSONObject json = new JSONObject();
 
 		for (Map.Entry<String, Object> entry : getMap().entrySet()) {
 			final String key = entry.getKey();
@@ -90,48 +143,19 @@ public interface DataObject {
 
 			if (value instanceof Savable || value instanceof DataObject) {
 				final DataObject obj = value instanceof Savable ? ((Savable) value).save() : (DataObject) value;
-
-				final Element element = document.addElement(key)
-						.addAttribute("type", "savable")
-						.addAttribute("class", value.getClass().getName());
-				obj.saveToXML(element);
-			} else {
-				document.addElement(key)
-						.addAttribute("type", "single")
-						.addAttribute("class", value.getClass().getSimpleName().toLowerCase())
-						.setText(value.toString());
-			}
+				json.put(key, obj.saveToJSON());
+			} else if (value instanceof DataList)
+				json.put(key, ((DataList) value).saveToJSON());
+			else json.put(key, value);
 		}
+
+		return json;
 	};
 
-	static DataObject loadFromXML(@NotNull Element element) {
-		Checks.notNull(element, "element");
+	default void saveToFile(@NotNull File file) throws IOException {
+		Checks.notNull(file, "file");
 
-		final DataObject dataObject = DataObject.empty();
-		for (Element child : element.elements()) {
-			if (child.attributeValue("type").equals("savable")) {
-				final String className = child.attributeValue("class");
-				try {
-					final Class<?> clazz = Class.forName(className);
-					final Object savable = clazz.getConstructor(DataObject.class);
-					dataObject.put(child.getName(), savable);
-				} catch (ClassNotFoundException | NoSuchMethodException e) {
-					e.printStackTrace();
-				}
-			} else {
-				final String type = child.attributeValue("class");
-				switch (type) {
-					case "string" -> dataObject.put(child.getName(), child.getText());
-					case "integer" -> dataObject.put(child.getName(), Integer.parseInt(child.getText()));
-					case "long" -> dataObject.put(child.getName(), Long.parseLong(child.getText()));
-					case "double" -> dataObject.put(child.getName(), Double.parseDouble(child.getText()));
-					case "float" -> dataObject.put(child.getName(), Float.parseFloat(child.getText()));
-					case "boolean" -> dataObject.put(child.getName(), Boolean.parseBoolean(child.getText()));
-					default -> throw new IllegalArgumentException("Unknown type: " + type);
-				}
-			}
-		}
-		return dataObject;
+		Files.write(file.toPath(), saveToJSON().toString(4).getBytes());
 	}
 
 }

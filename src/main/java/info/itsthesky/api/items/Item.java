@@ -1,5 +1,6 @@
 package info.itsthesky.api.items;
 
+import info.itsthesky.api.utils.Similar;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
@@ -8,7 +9,7 @@ import java.util.function.Consumer;
 /**
  * Represents an Item in the game that players can have.
  */
-public interface Item {
+public interface Item extends Similar<Item> {
 
 	/**
 	 * Get the unique identifier of this item.
@@ -74,6 +75,11 @@ public interface Item {
 	 * @throws IllegalArgumentException If the item data class is not registered.
 	 */
 	<T extends ItemData> void editData(Class<T> dataClass, @NotNull Consumer<T> changer);
+
+	@Override
+	default boolean isSimilar(Item other) {
+		return getId().equals(other.getId());
+	};
 
 	enum Category {
 		WEAPON,

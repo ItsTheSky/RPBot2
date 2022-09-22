@@ -1,8 +1,6 @@
 package info.itsthesky.api.utils;
 
-import net.dv8tion.jda.internal.utils.Checks;
-import org.dom4j.Branch;
-import org.jetbrains.annotations.NotNull;
+import org.json.JSONObject;
 
 /**
  * Represents an object that can be saved and loaded.
@@ -16,10 +14,8 @@ public interface Savable {
 	 */
 	DataObject save();
 
-	default void saveToXML(@NotNull Branch element) {
-		Checks.notNull(element, "element");
-
-		save().saveToXML(element);
+	default JSONObject saveToJSON() {
+		return save().saveToJSON();
 	}
 
 }

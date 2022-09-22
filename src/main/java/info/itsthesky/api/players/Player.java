@@ -3,6 +3,7 @@ package info.itsthesky.api.players;
 import info.itsthesky.api.quests.PlayerQuest;
 import info.itsthesky.api.quests.Quest;
 import info.itsthesky.api.users.UserData;
+import info.itsthesky.api.utils.Inventory;
 import info.itsthesky.api.utils.Savable;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;

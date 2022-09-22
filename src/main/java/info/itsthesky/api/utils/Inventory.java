@@ -1,11 +1,16 @@
-package info.itsthesky.api.players;
+package info.itsthesky.api.utils;
 
+import info.itsthesky.api.items.Item;
 import info.itsthesky.api.items.ItemStack;
-import info.itsthesky.api.utils.Savable;
+import info.itsthesky.api.players.Player;
+import info.itsthesky.core.utils.InventoryImpl;
+import net.dv8tion.jda.internal.utils.Checks;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.awt.image.BufferedImage;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 
@@ -15,18 +20,22 @@ import java.util.List;
  */
 public interface Inventory extends Iterable<ItemStack>, Savable {
 
+	static @NotNull Inventory create(@Nullable Player owner, int size, ItemStack... content) {
+		Checks.notNegative(size, "size");
+		Checks.noneNull(content, "content");
+
+		return new InventoryImpl(owner, new ArrayList<>(Arrays.asList(content)), size);
+	}
+
+	static @NotNull Inventory create(int size, ItemStack... content) {
+		return create(null, size, content);
+	}
+
 	/**
 	 * Check if this inventory is the player's inventory.
 	 * @return true if this inventory is the player's inventory.
 	 */
 	boolean isPlayerInventory();
-
-	/**
-	 * Gets the item at the specified slot.
-	 * @param slot The slot to get the item from.
-	 * @return The item at the specified slot.
-	 */
-	@Nullable ItemStack getItem(int slot);
 
 	/**
 	 * Gets the content of this inventory.
@@ -39,6 +48,8 @@ public interface Inventory extends Iterable<ItemStack>, Savable {
 	 * @param item The item to add.
 	 */
 	void addItem(@NotNull ItemStack item);
+
+	void addItem(@NotNull Item item, int amount);
 
 	/**
 	 * Add several items to the inventory.
